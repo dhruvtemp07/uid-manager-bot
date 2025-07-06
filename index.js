@@ -61,18 +61,18 @@ const commands = [
 ];
 
 // Register commands
-const rest = new REST({ version: "10" }).setToken("MTM5MTA5MjgyODQxOTAwMjM3OQ.GBnTKU.G8G3esfigwEoa8rfM3QoDrxuGl5d-AIQRPOAa0");
+const rest = new REST({ version: "10" }).setToken("BOT_TOKEN");
 
 (async () => {
   try {
     console.log("Deleting old commands...");
     await rest.put(
-      Routes.applicationGuildCommands("1391092828419002379", "1390996173892091986"),
+      Routes.applicationGuildCommands("BOT_ID", "SERVER_ID"),
       { body: [] }
     );
     console.log("Registering new commands...");
     await rest.put(
-      Routes.applicationGuildCommands("1391092828419002379", "1390996173892091986"),
+      Routes.applicationGuildCommands("BOT_ID", "SERVER_ID"),
       { body: commands }
     );
     console.log("Done!");
@@ -155,4 +155,4 @@ app.listen(3000, () => {
 });
 
 // Bot login
-client.login("MTM5MTA5MjgyODQxOTAwMjM3OQ.GBnTKU.G8G3esfigwEoa8rfM3QoDrxuGl5d-AIQRPOAa0");
+client.login("BOT_TOKEN");
