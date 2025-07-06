@@ -6,15 +6,25 @@ const {
   SlashCommandBuilder,
   InteractionType,
 } = require("discord.js");
-const fs = require("fs");
+const mongoose = require("mongoose");
 const express = require("express");
 const app = express();
 
-// Load saved IDs
-let ids = {};
-if (fs.existsSync("ids.json") && fs.readFileSync("ids.json").length > 0) {
-  ids = JSON.parse(fs.readFileSync("ids.json"));
-}
+// MongoDB Connect
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ Mongo Error:", err));
+
+// MongoDB Schema
+const idSchema = new mongoose.Schema({
+  userId: String,
+  bgmi: String,
+  ff: String
+});
+
+const UID = mongoose.model("UID", idSchema);
 
 // Bot client setup
 const client = new Client({
@@ -76,7 +86,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN);
       Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SERVER_ID),
       { body: commands }
     );
-    console.log("Done!");
+    console.log("✅ Slash Commands Registered");
   } catch (err) {
     console.error(err);
   }
@@ -95,64 +105,66 @@ client.on("interactionCreate", async interaction => {
 
   if (interaction.commandName === "bgmi-add-id") {
     const bgmiId = interaction.options.getString("id");
-    if (!ids[userId]) ids[userId] = {};
-    ids[userId].bgmi = bgmiId;
-    fs.writeFileSync("ids.json", JSON.stringify(ids, null, 2));
+    await UID.findOneAndUpdate(
+      { userId },
+      { $set: { bgmi: bgmiId } },
+      { upsert: true }
+    );
     await sendReplyWithTimeout(`✅ Your BGMI ID **${bgmiId}** has been saved!`);
   }
 
   if (interaction.commandName === "bgmi-get-id") {
     const user = interaction.options.getUser("user");
-    const message = (ids[user.id] && ids[user.id].bgmi)
-      ? `📱 **${user.username}**'s BGMI ID: **${ids[user.id].bgmi}**`
+    const record = await UID.findOne({ userId: user.id });
+    const message = (record?.bgmi)
+      ? `📱 **${user.username}**'s BGMI ID: **${record.bgmi}**`
       : `❌ No BGMI ID saved for **${user.username}**.`;
     await sendReplyWithTimeout(message);
   }
 
   if (interaction.commandName === "bgmi-remove-id") {
-    if (ids[userId] && ids[userId].bgmi) {
-      delete ids[userId].bgmi;
-      fs.writeFileSync("ids.json", JSON.stringify(ids, null, 2));
-      await sendReplyWithTimeout(`🗑️ Your BGMI ID has been removed.`);
-    } else {
-      await sendReplyWithTimeout(`❌ You haven't saved your BGMI ID yet.`);
-    }
+    await UID.findOneAndUpdate(
+      { userId },
+      { $unset: { bgmi: "" } }
+    );
+    await sendReplyWithTimeout(`🗑️ Your BGMI ID has been removed.`);
   }
 
   if (interaction.commandName === "ff-add-id") {
     const ffId = interaction.options.getString("id");
-    if (!ids[userId]) ids[userId] = {};
-    ids[userId].ff = ffId;
-    fs.writeFileSync("ids.json", JSON.stringify(ids, null, 2));
+    await UID.findOneAndUpdate(
+      { userId },
+      { $set: { ff: ffId } },
+      { upsert: true }
+    );
     await sendReplyWithTimeout(`✅ Your Free Fire ID **${ffId}** has been saved!`);
   }
 
   if (interaction.commandName === "ff-get-id") {
     const user = interaction.options.getUser("user");
-    const message = (ids[user.id] && ids[user.id].ff)
-      ? `🎮 **${user.username}**'s Free Fire ID: **${ids[user.id].ff}**`
+    const record = await UID.findOne({ userId: user.id });
+    const message = (record?.ff)
+      ? `🎮 **${user.username}**'s Free Fire ID: **${record.ff}**`
       : `❌ No Free Fire ID saved for **${user.username}**.`;
     await sendReplyWithTimeout(message);
   }
 
   if (interaction.commandName === "ff-remove-id") {
-    if (ids[userId] && ids[userId].ff) {
-      delete ids[userId].ff;
-      fs.writeFileSync("ids.json", JSON.stringify(ids, null, 2));
-      await sendReplyWithTimeout(`🗑️ Your Free Fire ID has been removed.`);
-    } else {
-      await sendReplyWithTimeout(`❌ You haven't saved your Free Fire ID yet.`);
-    }
+    await UID.findOneAndUpdate(
+      { userId },
+      { $unset: { ff: "" } }
+    );
+    await sendReplyWithTimeout(`🗑️ Your Free Fire ID has been removed.`);
   }
 });
 
-// Web server for uptime
+// Web server for uptime pings
 app.get('/', (req, res) => {
   res.send('Bot is online!');
 });
 
 app.listen(3000, () => {
-  console.log('Web server is live.');
+  console.log('🌐 Web server is live for uptime pings');
 });
 
 // Bot login
