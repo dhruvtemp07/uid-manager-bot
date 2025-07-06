@@ -61,18 +61,19 @@ const commands = [
 ];
 
 // Register commands
-const rest = new REST({ version: "10" }).setToken("BOT_TOKEN");
+const rest = new REST({ version: "10" }).setToken(process.env.BOT_TOKEN);
 
 (async () => {
   try {
     console.log("Deleting old commands...");
     await rest.put(
-      Routes.applicationGuildCommands("BOT_ID", "SERVER_ID"),
+      Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SERVER_ID),
       { body: [] }
     );
+
     console.log("Registering new commands...");
     await rest.put(
-      Routes.applicationGuildCommands("BOT_ID", "SERVER_ID"),
+      Routes.applicationGuildCommands(process.env.BOT_ID, process.env.SERVER_ID),
       { body: commands }
     );
     console.log("Done!");
@@ -155,4 +156,4 @@ app.listen(3000, () => {
 });
 
 // Bot login
-client.login("BOT_TOKEN");
+client.login(process.env.BOT_TOKEN);
